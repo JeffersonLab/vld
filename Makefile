@@ -7,7 +7,7 @@
 #             Fax:   (757) 269-5800             Newport News, VA 23606
 #
 # Description:
-#    Makefile for Driver Template
+#    Makefile for VLD library
 #
 #
 BASENAME=vld

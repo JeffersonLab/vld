@@ -261,8 +261,7 @@ vldInit(uint32_t addr, uint32_t addr_inc, uint32_t nfind, uint32_t iFlag)
 		{
 		  VLDp[boardID] = (vldRegs *)(laddr_inc);
 		  vldID[nVLD] = boardID;
-		  unsigned long fwaddr = (unsigned long) (laddr_inc + 0x7c);
-		  firmwareInfo = vmeRead32((volatile uint32_t *)fwaddr) & VLD_FIRMWARE_ID_MASK;
+		  firmwareInfo = vmeRead32(&VLDp[boardID]->firmwareVersion) & VLD_FIRMWARE_ID_MASK;
 		  vldFWVers[boardID] = firmwareInfo;
 
 		  if(firmwareInfo <= 0)
@@ -709,16 +708,13 @@ vldGetClockSource(int32_t id, uint32_t *clkSrc)
  * @details Control the beach current setting for the specified slot ID and connector
  * @param[in] id Slot ID
  * @param[in] connector `[0,4]` Connector ID
- * @param[in] lochanEnableMask `[0,0x3FFFF]` Enable mask for the lower 18 channels.
- * @param[in] hichanEnableMask `[0,0x3FFFF]` Enable mask for the upper 18 channels.
  * @param[in] ctrlLDO `[0,7]` Bleach current setting
  * @param[in] enableLDO `[0,1]` Disable (0) / Enable (1) LDO Regulator
  * @return If successful, OK.  Otherwise ERROR.
  */
 int32_t
-vldLEDCalibration(int32_t id, uint32_t connector,
-		  uint32_t lochanEnableMask, uint32_t hichanEnableMask,
-		  uint32_t ctrlLDO, uint32_t enableLDO)
+vldSetBleachCurrent(int32_t id, uint32_t connector,
+		    uint32_t ctrlLDO, uint32_t enableLDO)
 {
   uint32_t rval = 0;
   CHECKID(id);
@@ -727,20 +723,6 @@ vldLEDCalibration(int32_t id, uint32_t connector,
     {
       printf("%s(%d): ERROR: Invalid connector (%d).\n",
 	     __func__, id, connector);
-      return ERROR;
-    }
-
-  if(lochanEnableMask > 0x0003FFFF)
-    {
-      printf("%s(%d): ERROR: Invalid lochanEnableMask (0x%x).\n",
-	     __func__, id, lochanEnableMask);
-      return ERROR;
-    }
-
-  if(hichanEnableMask > 0x0003FFFF)
-    {
-      printf("%s(%d): ERROR: Invalid hichanEnableMask (0x%x).\n",
-	     __func__, id, hichanEnableMask);
       return ERROR;
     }
 
@@ -754,15 +736,47 @@ vldLEDCalibration(int32_t id, uint32_t connector,
   enableLDO = enableLDO ? (LED_CONTROL_BLEACH_REG_ENABLE | LED_CONTROL_BLEACH_ENABLE) : 0;
 
   VLOCK;
-  /* Set enable mask for channels #19 - #36 */
-  vmeWrite32(&VLDp[id]->output[connector].high, (hichanEnableMask << 1));
+  /* Disable calibration mode */
+  vmeWrite32(&VLDp[id]->output[connector].high, 0);
 
-  /* Set enable mask for channels #1 - #18, LDO control, and bleaching enable */
+  /* Disable calibration mode, Set LDO control, and bleaching enable */
   vmeWrite32(&VLDp[id]->output[connector].low_ctrl,
-	     (lochanEnableMask << 1) | (ctrlLDO << 24) | enableLDO);
+	     (ctrlLDO << 24) | enableLDO);
 
+  VUNLOCK;
+  return OK;
+}
 
-  /* Not sure if I set bit 0 or the firmware does.. and reports it back */
+/**
+ * @brief Get the bleach current setting
+ * @details Get the beach current setting for the specified slot ID and connector
+ * @param[in] id Slot ID
+ * @param[in] connector `[0,4]` Connector ID
+ * @param[in] ctrlLDO `[0,7]` Bleach current setting
+ * @param[in] enableLDO `[0,1]` Disable (0) / Enable (1) LDO Regulator
+ * @return If successful, OK.  Otherwise ERROR.
+ */
+int32_t
+vldGetBleachCurrent(int32_t id, uint32_t connector,
+		    uint32_t *ctrlLDO, uint32_t *enableLDO)
+{
+  uint32_t rval = 0, reg = 0;
+  CHECKID(id);
+
+  if(connector > 4)
+    {
+      printf("%s(%d): ERROR: Invalid connector (%d).\n",
+	     __func__, id, connector);
+      return ERROR;
+    }
+
+  VLOCK;
+  /* Get LDO control, and bleaching enable */
+  reg = vmeRead32(&VLDp[id]->output[connector].low_ctrl);
+
+  *ctrlLDO = (reg & LED_CONTROL_BLEACH_CTRL_MASK) >> 24;
+  *enableLDO = (reg & LED_CONTROL_BLEACH_ENABLE_MASK) == LED_CONTROL_BLEACH_ENABLE ? 1 : 0;
+
   VUNLOCK;
   return OK;
 }
@@ -834,6 +848,93 @@ vldGetBleachTime(int32_t id, uint32_t *timer, uint32_t *enable)
   *enable = ((rval & VLD_BLEACHTIME_ENABLE_MASK) == VLD_BLEACHTIME_ENABLE );
   VUNLOCK;
 
+  return OK;
+}
+
+/**
+ * @brief Set the channel masks for the specified connector
+ * @details Set the channel masks for the specified connector
+ * @param[in] id Slot ID
+ * @param[in] connector `[0,4]` Connector ID
+ * @param[in] lochanEnableMask [0x3FFFFF] Enable mask for lower 18 channels
+ * @param[in] hichanEnableMask [0x3FFFFF] Enable mask for upper 18 channels
+ * @return If successful, OK.  Otherwise ERROR.
+ */
+int32_t
+vldSetChannelMask(int32_t id,
+		  uint32_t connector, uint32_t lochanEnableMask, uint32_t hichanEnableMask)
+{
+  uint32_t rval = 0;
+  CHECKID(id);
+
+  if(connector > 4)
+    {
+      printf("%s(%d): ERROR: Invalid connector (%d).\n",
+	     __func__, id, connector);
+      return ERROR;
+    }
+
+  if(lochanEnableMask > 0x0003FFFF)
+    {
+      printf("%s(%d): ERROR: Invalid lochanEnableMask (0x%x).\n",
+	     __func__, id, lochanEnableMask);
+      return ERROR;
+    }
+
+  if(hichanEnableMask > 0x0003FFFF)
+    {
+      printf("%s(%d): ERROR: Invalid hichanEnableMask (0x%x).\n",
+	     __func__, id, hichanEnableMask);
+      return ERROR;
+    }
+
+  VLOCK;
+  /* Set enable mask for channels #19 - #36 */
+  vmeWrite32(&VLDp[id]->output[connector].high,
+	     LED_CONTROL_CALIBRATION_ENABLE |
+	     (hichanEnableMask << 1));
+
+  /* Set enable mask for channels #1 - #18 */
+  vmeWrite32(&VLDp[id]->output[connector].low_ctrl,
+	     LED_CONTROL_CALIBRATION_ENABLE |
+	     (lochanEnableMask << 1));
+
+  VUNLOCK;
+  return OK;
+
+}
+
+/**
+ * @brief Get the channel masks for the specified connector
+ * @details Get the channel masks for the specified connector
+ * @param[in] id Slot ID
+ * @param[in] connector `[0,4]` Connector ID
+ * @param[out] lochanEnableMask [0x3FFFFF] Enable mask for lower 18 channels
+ * @param[out] hichanEnableMask [0x3FFFFF] Enable mask for upper 18 channels
+ * @return If successful, OK.  Otherwise ERROR.
+ */
+int32_t
+vldGetChannelMask(int32_t id,
+		  uint32_t connector, uint32_t *lochanEnableMask, uint32_t *hichanEnableMask)
+{
+  uint32_t rval = 0;
+  CHECKID(id);
+
+  if(connector > 4)
+    {
+      printf("%s(%d): ERROR: Invalid connector (%d).\n",
+	     __func__, id, connector);
+      return ERROR;
+    }
+
+  VLOCK;
+  /* Get enable mask for channels #19 - #36 */
+  *hichanEnableMask = (vmeRead32(&VLDp[id]->output[connector].high) & LED_CONTROL_CH_ENABLE_MASK) >> 1;
+
+  /* Set enable mask for channels #1 - #18 */
+  *lochanEnableMask = (vmeRead32(&VLDp[id]->output[connector].low_ctrl) & LED_CONTROL_CH_ENABLE_MASK) >> 1;
+
+  VUNLOCK;
   return OK;
 }
 
@@ -1269,6 +1370,11 @@ vldResetMGT(int32_t id)
   return OK;
 }
 
+/**
+ * @brief Hard Clock Reset
+ * @param[in] id Slot ID
+ * @return If successful, OK.  Otherwise ERROR.
+ */
 int32_t
 vldHardClockReset(int32_t id)
 {
@@ -1276,6 +1382,42 @@ vldHardClockReset(int32_t id)
 
   VLOCK;
   vmeWrite32(&VLDp[id]->reset, VLD_RESET_HARD_CLK);
+  VUNLOCK;
+
+  return OK;
+}
+
+/**
+ * @brief Get the module's board ID
+ * @param[in] id Slot ID
+ * @param[out] boardID from module
+ * @return If successful, OK.  Otherwise ERROR.
+ */
+int32_t
+vldGetBoardID(int32_t id, uint32_t *boardID)
+{
+  CHECKID(id);
+
+  VLOCK;
+  *boardID = (vmeRead32(&VLDp[id]->boardID) & VLD_BOARDID_TYPE_MASK) >> 16;
+  VUNLOCK;
+
+  return OK;
+}
+
+/**
+ * @brief Get the module's firmware version
+ * @param[in] id Slot ID
+ * @param[out] fw Firmware version from module
+ * @return If successful, OK.  Otherwise ERROR.
+ */
+int32_t
+vldGetFirmwareVersion(int32_t id, uint32_t *fw)
+{
+  CHECKID(id);
+
+  VLOCK;
+  *fw = vmeRead32(&VLDp[id]->firmwareVersion) & 0xFF;
   VUNLOCK;
 
   return OK;

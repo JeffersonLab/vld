@@ -34,7 +34,7 @@ typedef struct
 } ledControlRegs;
 
 
-#define LED_CONTROL_CALIBRATION_ENABLED   (1 << 0)
+#define LED_CONTROL_CALIBRATION_ENABLE    (1 << 0)
 #define LED_CONTROL_CH_ENABLE_MASK        0x0007FFFE
 #define LED_CONTROL_BLEACH_CTRL_MASK      0x07000000
 #define LED_CONTROL_BLEACH_REG_ENABLE     (1 << 27)
@@ -56,7 +56,8 @@ typedef struct
   /* 0x006C */ volatile uint32_t pulseLoad;
   /* 0x0070 */ volatile uint32_t calibrationWidth;
   /* 0x0074 */ volatile uint32_t analogCtrl;
-  /* 0x0078 */ uint32_t _BLANK[(0x88-0x78)>>2];
+  /* 0x0078 */ volatile uint32_t firmwareVersion;
+  /* 0x007C */ uint32_t _BLANK[(0x88-0x7C)>>2];
   /* 0x0088 */ volatile uint32_t randomTrig;
   /* 0x008C */ volatile uint32_t periodicTrig;
   /* 0x0090 */ uint32_t _BLANK[(0xDC-0x90)>>2];
@@ -166,12 +167,18 @@ int32_t  vldGetTriggerSourceMask(int32_t id, uint32_t *trigSrc);
 int32_t  vldSetClockSource(int32_t id, uint32_t clkSrc);
 int32_t  vldGetClockSource(int32_t id, uint32_t *clkSrc);
 
-int32_t  vldLEDCalibration(int32_t id, uint32_t connector,
-			   uint32_t lochanEnableMask, uint32_t hichanEnableMask,
-			   uint32_t ctrlLDO, uint32_t enableLDO);
+int32_t  vldSetBleachCurrent(int32_t id,
+			     uint32_t connector, uint32_t ctrlLDO, uint32_t enableLDO);
+int32_t  vldGetBleachCurrent(int32_t id,
+			     uint32_t connector, uint32_t *ctrlLDO, uint32_t *enableLDO);
 
 int32_t  vldSetBleachTime(int32_t id, uint32_t timer, uint32_t enable);
 int32_t  vldGetBleachTime(int32_t id, uint32_t *timer, uint32_t *enable);
+
+int32_t  vldSetChannelMask(int32_t id,
+			   uint32_t connector, uint32_t lochanEnableMask, uint32_t hichanEnableMask);
+int32_t  vldGetChannelMask(int32_t id,
+			   uint32_t connector, uint32_t *lochanEnableMask, uint32_t *hichanEnableMask);
 
 int32_t  vldLoadPulse(int32_t id, uint8_t *dac_samples, uint32_t nsamples);
 int32_t  vldLoadPulse32(int32_t id, uint32_t *dac_samples, uint32_t nsamples);
@@ -196,5 +203,7 @@ int32_t  vldSoftReset(int32_t id);
 int32_t  vldResetClockDCM(int32_t id);
 int32_t  vldResetMGT(int32_t id);
 int32_t  vldHardClockReset(int32_t id);
+int32_t  vldGetBoardID(int32_t id, uint32_t *boardID);
+int32_t  vldGetFirmwareVersion(int32_t id, uint32_t *fw);
 
 #define vldG(_function, ...) {int32_t _iv; for(_iv = 0; _iv < nVLD; _iv) _function(## __VA_ARGS__);}
