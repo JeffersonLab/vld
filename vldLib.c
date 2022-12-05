@@ -411,7 +411,7 @@ vldGStatus(int32_t pFlag)
       slot = vldSlot(iv);
 
       /* Slot */
-      printf("%2d       ", iv);
+      printf("%2d       ", slot);
 
       printf("0x%02x      ", vldFWVers[slot]);
 
@@ -444,7 +444,7 @@ vldGStatus(int32_t pFlag)
       slot = vldSlot(iv);
 
       /* Slot */
-      printf("%2d       ",iv);
+      printf("%2d       ",slot);
 
       printf("%10u ", (int)
 	     ((rb[slot].bleachTime & VLD_BLEACHTIME_TIMER_MASK) * 20 * 1024 * 1024) / 1000);
@@ -476,7 +476,7 @@ vldGStatus(int32_t pFlag)
       slot = vldSlot(iv);
 
       /* Slot */
-      printf("%2d       ", iv);
+      printf("%2d       ", slot);
 
       printf("%d         ",
 	     (rb[slot].randomTrig & VLD_RANDOMTRIG_PRESCALE_MASK));
@@ -1419,6 +1419,7 @@ vldGetFirmwareVersion(int32_t id, uint32_t *fw)
   VLOCK;
   *fw = vmeRead32(&VLDp[id]->firmwareVersion) & 0xFF;
   VUNLOCK;
+
 
   return OK;
 }
