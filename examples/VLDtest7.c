@@ -114,7 +114,7 @@ VLDtest7(unsigned int islot)
   DataHigh = 0;
   for (iconnector = 0; iconnector < 5; iconnector++)
     {
-      vldLEDCalibration(islot, iconnector, DataLow, DataHigh, 0, 0);
+      vldSetChannelMask(islot, iconnector, DataLow, DataHigh);
     }
 
   /* pause the pulser */

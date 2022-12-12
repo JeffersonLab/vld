@@ -139,7 +139,7 @@ VLDtest6(unsigned int islot)
 		}
 	    }
 
-	  vldLEDCalibration(islot, iconnector, DataLow, DataHigh, 0, 0);
+	  vldSetChannelMask(islot, iconnector, DataLow, DataHigh);
 
 	  // pause the pulser
 	  printf("\n Channel# %d is pulsing....  Ready to the next channel?... \n",
@@ -155,10 +155,10 @@ VLDtest6(unsigned int islot)
       for(iBleach = 7; iBleach < 17; iBleach++)
 	{
 	  /* start the bleaching of the connector */
-	  vldLEDCalibration(islot, iconnector, 0, 0, (iBleach % 16), 1);
+	  vldSetBleachCurrent(islot, iconnector, (iBleach % 16), 1);
 
 	  if(iBleach == 16)
-	    vldLEDCalibration(islot, iconnector, 0, 0, 0, 0);
+	    vldSetBleachCurrent(islot, iconnector, 0, 0);
 
 	  /* pause the pulser */
 	  printf("\n Bleaching setting %02x....  Ready to the next value? (hit 'enter'): \n",
