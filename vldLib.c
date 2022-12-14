@@ -1227,8 +1227,8 @@ vldGetPeriodicPulser(int32_t id, uint32_t *period, uint32_t *npulses)
   VLOCK;
   rval = vmeRead32(&VLDp[id]->periodicTrig);
 
-  *period = rval & VLD_PERIODICTRIG_NPULSES_MASK;
-  *npulses = (rval & VLD_PERIODICTRIG_PERIOD_MASK) >> 16;
+  *npulses = (rval & VLD_PERIODICTRIG_NPULSES_MASK);
+  *period = (rval & VLD_PERIODICTRIG_PERIOD_MASK) >> 16;
   VUNLOCK;
 
   return OK;
