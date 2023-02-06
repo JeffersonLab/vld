@@ -154,6 +154,7 @@ int32_t  vldCheckAddresses();
 int32_t  vldInit(uint32_t vme_addr, uint32_t vme_incr, uint32_t nincr, uint32_t iFlag);
 int32_t  vldSlot(uint32_t index);
 uint32_t vldSlotMask();
+int32_t  vldGetNVLD();
 int32_t  vldGetGeoAddress(int id);
 
 void     vldGStatus(int32_t pFlag);
@@ -182,6 +183,10 @@ int32_t  vldGetChannelMask(int32_t id,
 
 int32_t  vldLoadPulse(int32_t id, uint8_t *dac_samples, uint32_t nsamples);
 int32_t  vldLoadPulse32(int32_t id, uint32_t *dac_samples, uint32_t nsamples);
+
+int32_t  vldGetExamplePulse(uint32_t *dac_samples, uint32_t *nsamples);
+int32_t  vldLoadExamplePulse(int32_t id);
+int32_t  vldLoadSquarePulse(int32_t id, uint32_t width, uint8_t dac);
 
 int32_t  vldSetCalibrationPulseWidth(int32_t id, uint32_t width);
 int32_t  vldGetCalibrationPulseWidth(int32_t id, uint32_t *width);

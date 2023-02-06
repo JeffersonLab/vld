@@ -344,6 +344,12 @@ vldSlotMask()
   return dmask;
 }
 
+int32_t
+vldGetNVLD()
+{
+  return nVLD;
+}
+
 /**
  * @brief Return the geographic address
  * @details Return the geographic address of the specified module
@@ -986,7 +992,7 @@ vldLoadPulse(int32_t id, uint8_t *dac_samples, uint32_t nsamples)
  * @param[in] id Slot ID
  * @param[in] dac_samples Address of Array of 32bit DAC samples
  * @param[in] nsamples number of 32bit values to write
- * @return Description
+ * @return OK of successful, otherwise ERROR.
  */
 int32_t
 vldLoadPulse32(int32_t id, uint32_t *dac_samples, uint32_t nsamples)
@@ -1005,6 +1011,104 @@ vldLoadPulse32(int32_t id, uint32_t *dac_samples, uint32_t nsamples)
   VUNLOCK;
 
   return OK;
+}
+
+/**
+ * @brief Write example pulse into provided array
+ * @details Load an example pulse into provided array.
+ * @param[out] dac_samples Address to store example pulse
+ * @param[out] nsamples number of samples loaded
+ * @return OK of successful, otherwise ERROR.
+ */
+
+int32_t
+vldGetExamplePulse(uint32_t *dac_samples, uint32_t *nsamples)
+{
+  int32_t idata;
+  uint32_t DataLoad = 0;
+
+
+  *nsamples = 512;
+  for (idata = 0; idata < *nsamples; idata++)
+    {
+      if ((idata <4)  || (idata >143))
+	DataLoad = 0x01010101;
+
+      if ((idata > 3)  && (idata < 67))
+	DataLoad = ((2*(idata-4)+3) <<24) + ((2*(idata-4)+2) << 16) +
+	  ((2*(idata-4)+1) <<8) + 2*(idata-4);
+
+      if ((idata > 66) && (idata < 80))
+	DataLoad = 0xFFFFFFFF;
+
+      if ((idata > 79) && (idata <144))
+	DataLoad = ((2*(143-idata)+3) <<24) + ((2*(143-idata)+2) << 16) +
+	  ((2*(143-idata)+1) <<8) + 2*(143-idata);
+
+      dac_samples[idata] = DataLoad;
+    }
+
+  return OK;
+}
+
+/**
+ * @brief Load an example pulse into specified VLD
+ * @details Load an example pulse into specified VLD
+ * @param[in] id Slot ID
+ * @return OK of successful, otherwise ERROR.
+ */
+int32_t
+vldLoadExamplePulse(int32_t id)
+{
+  int32_t rval = 0;
+  uint32_t *dac_samples = NULL, nsamples = 512;
+
+  dac_samples = (uint32_t *)malloc(nsamples * sizeof(uint32_t));
+
+  vldGetExamplePulse(dac_samples, &nsamples);
+
+  rval = vldLoadPulse32(id, dac_samples, nsamples);
+
+  if(dac_samples)
+    free(dac_samples);
+
+  return rval;
+}
+
+/**
+ * @brief Load an square pulse into specified VLD
+ * @details Load an square pulse into specified VLD, with specified width and dac level
+ * @param[in] id Slot ID
+ * @param[in] width `[0, 512]` Pulse width [2ns]
+ * @param[in] dac `[0, 255]` DAC value
+ * @return OK of successful, otherwise ERROR.
+ */
+int32_t
+vldLoadSquarePulse(int32_t id, uint32_t width, uint8_t dac)
+{
+  int32_t rval = 0, idata;
+  uint8_t *dac_samples = NULL;
+
+  dac_samples = (uint8_t *)malloc((width + 4) * sizeof(uint8_t));
+
+  dac_samples[0] = 0;
+  dac_samples[1] = 0;
+
+  for(idata = 2; idata < width+2; idata++)
+    {
+      dac_samples[idata] = dac;
+    }
+
+  dac_samples[width+2] = 0;
+  dac_samples[width+3] = 0;
+
+  rval = vldLoadPulse(id, dac_samples, width+4);
+
+  if(dac_samples)
+    free(dac_samples);
+
+  return rval;
+
 }
 
 /**
