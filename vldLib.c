@@ -177,6 +177,7 @@ vldInit(uint32_t addr, uint32_t addr_inc, uint32_t nfind, uint32_t iFlag)
       if( ((addr_inc==0)||(nfind==0)) && (useList==0) )
 	{ /* assume only one VLD to initialize */
 	  nfind = 1;
+	  vldAddrList[0] = addr;
 	}
     }
 
@@ -271,9 +272,8 @@ vldInit(uint32_t addr, uint32_t addr_inc, uint32_t nfind, uint32_t iFlag)
 		      return ERROR;
 		    }
 
-		  printf("Initialized VLD %2d  FW 0x%2x Slot #%d at address 0x%08lx (0x%08x) \n",
+		  printf("Initialized VLD %2d  FW 0x%2x Slot #%d at address 0x%08x \n",
 			 nVLD, firmwareInfo, vldID[nVLD],
-			 (unsigned long) VLDp[(vldID[nVLD])],
 			 (uint32_t)((unsigned long)VLDp[(vldID[nVLD])]-vldA24Offset));
 		}
 	    }
@@ -1219,16 +1219,16 @@ vldGetAnalogSwitchControl(int32_t id, uint32_t *enableDelay, uint32_t *enableWid
  * @brief Set the parameters of internal random pulser
  * @details Set the parameters of internal random pulser for the specified module
  * @param[in] id Slot ID
- * @param[in] prescale `[0,7]` Random Pulser Rate prescale. Rate is determined by:
+ * @param[in] prescale `[0,15]` Random Pulser Rate prescale. Rate is determined by:
  *      rate ~ (700 kHz) / (2 ** prescale)
- *      e.g. prescale = 5, rate ~ 20 kHz
+ *      e.g. prescale = 5, rate ~ 20 kHz, prescale = 15, rate ~ 21Hz
  * @param[in] enable `[0,1]` Disable (0) / Enable (1) internal random pulser
  * @return Description
  */
 int32_t
 vldSetRandomPulser(int32_t id, uint32_t prescale, uint32_t enable)
 {
-  uint32_t maxPrescale = 0x7;
+  uint32_t maxPrescale = 0xF;
   CHECKID(id);
 
   if(prescale > maxPrescale)

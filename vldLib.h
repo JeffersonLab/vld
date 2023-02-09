@@ -119,7 +119,7 @@ typedef struct
 #define VLD_ANALOGCTRL_WIDTH_MASK   0x0000FE00
 
 /* 0x88 randomTrig */
-#define VLD_RANDOMTRIG_PRESCALE_MASK    0x00000007
+#define VLD_RANDOMTRIG_PRESCALE_MASK    0x0000000F
 #define VLD_RANDOMTRIG_ENABLE           (1 << 7)
 
 /* 0x8C periodicTrig */
@@ -210,5 +210,3 @@ int32_t  vldResetMGT(int32_t id);
 int32_t  vldHardClockReset(int32_t id);
 int32_t  vldGetBoardID(int32_t id, uint32_t *boardID);
 int32_t  vldGetFirmwareVersion(int32_t id, uint32_t *fw);
-
-#define vldG(_function, ...) {int32_t _iv; for(_iv = 0; _iv < nVLD; _iv) _function(## __VA_ARGS__);}
