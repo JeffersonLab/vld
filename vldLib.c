@@ -396,7 +396,7 @@ vldGStatus(int32_t pFlag)
       READVLD(slot, trigDelay);
       READVLD(slot, trigSrc);
       READVLD(slot, clockSrc);
-      READVLD(slot, bleachTime);
+      READVLD(slot, bleachTimeRB);
       READVLD(slot, calibrationWidth);
       READVLD(slot, analogCtrl);
       READVLD(slot, randomTrig);
@@ -847,7 +847,7 @@ vldGetBleachTime(int32_t id, uint32_t *timer, uint32_t *enable)
   CHECKID(id);
 
   VLOCK;
-  rval = vmeRead32(&VLDp[id]->bleachTime);
+  rval = vmeRead32(&VLDp[id]->bleachTimeRB);
 
   *timer = rval & VLD_BLEACHTIME_TIMER_MASK;
 
@@ -1280,14 +1280,18 @@ vldGetRandomPulser(int32_t id, uint32_t *prescale, uint32_t *enable)
  * @brief Set the parameters for the internal periodic pulser
  * @details Set the parameters for the internal periodic pulser for the specified module
  * @param[in] id Slot ID
- * @param[in] period `[0,65535]` Pulser Period
- * @param[in] npulses `[0,65535]` Number of pulses to generate
+ * @param[in] period `[0,32767]` Pulser Period
+ * @param[in] period_range
+ *     - 0: small period range (min: 32ns, increments of 8ns)
+ *     - 1: large period range (min: 32ns, increments of 8.2us)
+ * @param[in] npulses `[0,65535]` Number of pulses to generate.  If 65535 (0xffff), not limitted
  * @return If successful, OK.  Otherwise ERROR.
  */
 int32_t
-vldSetPeriodicPulser(int32_t id, uint32_t period, uint32_t npulses)
+vldSetPeriodicPulser(int32_t id, uint32_t period, uint32_t period_range, uint32_t npulses)
 {
-  uint32_t maxPeriod = 0xFFFF, maxNpulses = 0xFFFF;
+  uint32_t maxPeriod = 0x7FFF, maxNpulses = 0xFFFF;
+  uint32_t wval = 0;
   CHECKID(id);
 
   if(period > maxPeriod)
@@ -1304,11 +1308,12 @@ vldSetPeriodicPulser(int32_t id, uint32_t period, uint32_t npulses)
       npulses = maxNpulses;
     }
 
-  VLOCK;
-  if(period == 0)
-    period = (vmeRead32(&VLDp[id]->periodicTrig) & VLD_PERIODICTRIG_PERIOD_MASK) >> 16;
+  period_range = (period_range) ? 1 : 0;
 
-  vmeWrite32(&VLDp[id]->periodicTrig, npulses | (period << 16));
+  VLOCK;
+  wval = (npulses) | (period << 16) | (period_range << 31);
+
+  vmeWrite32(&VLDp[id]->periodicTrig, wval);
   VUNLOCK;
 
   return OK;
@@ -1323,7 +1328,7 @@ vldSetPeriodicPulser(int32_t id, uint32_t period, uint32_t npulses)
  * @return If successful, OK.  Otherwise ERROR.
  */
 int32_t
-vldGetPeriodicPulser(int32_t id, uint32_t *period, uint32_t *npulses)
+vldGetPeriodicPulser(int32_t id, uint32_t *period, uint32_t *period_range, uint32_t *npulses)
 {
   uint32_t rval = 0;
   CHECKID(id);
@@ -1333,6 +1338,7 @@ vldGetPeriodicPulser(int32_t id, uint32_t *period, uint32_t *npulses)
 
   *npulses = (rval & VLD_PERIODICTRIG_NPULSES_MASK);
   *period = (rval & VLD_PERIODICTRIG_PERIOD_MASK) >> 16;
+  *period_range = (rval & VLD_PERIODICTRIG_PERIOD_MASK) >> 31;
   VUNLOCK;
 
   return OK;

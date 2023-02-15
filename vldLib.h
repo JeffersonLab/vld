@@ -56,8 +56,10 @@ typedef struct
   /* 0x006C */ volatile uint32_t pulseLoad;
   /* 0x0070 */ volatile uint32_t calibrationWidth;
   /* 0x0074 */ volatile uint32_t analogCtrl;
-  /* 0x0078 */ volatile uint32_t firmwareVersion;
-  /* 0x007C */ uint32_t _BLANK[(0x88-0x7C)>>2];
+  /* 0x0078 */ volatile uint32_t bleachTimeRB;
+  /* 0x007C */ volatile uint32_t bleachTimeRB2;
+  /* 0x0080 */ volatile uint32_t firmwareVersion;
+  /* 0x0084 */ uint32_t _BLANK[(0x88-0x84)>>2];
   /* 0x0088 */ volatile uint32_t randomTrig;
   /* 0x008C */ volatile uint32_t periodicTrig;
   /* 0x0090 */ uint32_t _BLANK[(0xDC-0x90)>>2];
@@ -123,8 +125,9 @@ typedef struct
 #define VLD_RANDOMTRIG_ENABLE           (1 << 7)
 
 /* 0x8C periodicTrig */
-#define VLD_PERIODICTRIG_NPULSES_MASK   0x0000FFFF
-#define VLD_PERIODICTRIG_PERIOD_MASK    0xFFFF0000
+#define VLD_PERIODICTRIG_NPULSES_MASK      0x0000FFFF
+#define VLD_PERIODICTRIG_PERIOD_MASK       0x7FFF0000
+#define VLD_PERIODICTRIG_PERIOD_RANGE_MASK 0x80000000
 
 /* 0xDC trigCnt */
 #define VLD_TRIGCNT_MASK   0xFFFFFFFF
@@ -196,8 +199,8 @@ int32_t  vldGetAnalogSwitchControl(int32_t id, uint32_t *enableDelay, uint32_t *
 
 int32_t  vldSetRandomPulser(int32_t id, uint32_t prescale, uint32_t enable);
 int32_t  vldGetRandomPulser(int32_t id, uint32_t *prescale, uint32_t *enable);
-int32_t  vldSetPeriodicPulser(int32_t id, uint32_t period, uint32_t npulses);
-int32_t  vldGetPeriodicPulser(int32_t id, uint32_t *period, uint32_t *npulses);
+int32_t  vldSetPeriodicPulser(int32_t id, uint32_t period, uint32_t period_range, uint32_t npulses);
+int32_t  vldGetPeriodicPulser(int32_t id, uint32_t *period, uint32_t *period_range, uint32_t *npulses);
 
 int32_t  vldGetTriggerCount(int32_t id, uint32_t *trigCnt);
 

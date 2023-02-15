@@ -1,3 +1,5 @@
 -- NPS_VLD firmware history
 -- V2.2, Mar. 28 2022: the register 0x00 readback 0x7501xxxx, and invalid register 0xBadAdd21 (v2.1)
 -- V2.4, Aug. 17, 2022: Fix the 0x00 to 0x1EDDxxxx, non-valid address to 0xBadAdd24
+-- V2.5, Dec. 14, 2022: Use Reg 0x78, 0x7C to readout the Bleach Timer, non-valid address: 0xBadAdd25
+-- V3.1, Feb. 14m, 2023: Added the periodic trigger (0x8C) logic.  (Copied from TIpcieUS design). 0xBadAdd31
