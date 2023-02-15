@@ -948,7 +948,7 @@ vldGetChannelMask(int32_t id,
  * @brief Pulse Shape loading routine
  * @details Load a pulse shape into the specified module
  * @param[in] id Slot ID
- * @param[in] dac_samples `[0, 0x7F]` Address of Array of DAC samples
+ * @param[in] dac_samples `[0, 0x3F]` Address of Array of DAC samples
  * (2ns) to load. For each sample:
  *      bits | desc
  *          -|-
@@ -964,7 +964,16 @@ vldLoadPulse(int32_t id, uint8_t *dac_samples, uint32_t nsamples)
   uint32_t isample = 0, ibyte = 0, wval = 0;
   CHECKID(id);
 
+  if(nsamples > 2048)
+    {
+      printf("%s(%d): ERROR: Invalid nsamples (%d)\n",
+	     __func__, id, nsamples);
+      return ERROR;
+    }
+
   VLOCK;
+  vmeWrite32(&VLDp[id]->reset, VLD_RESET_PULSESHAPE_ADDR);
+
   /* loop through and write 4 byte values out of the 1 byte samples */
   while(isample < nsamples)
     {
@@ -991,7 +1000,7 @@ vldLoadPulse(int32_t id, uint8_t *dac_samples, uint32_t nsamples)
  * LSB.
  * @param[in] id Slot ID
  * @param[in] dac_samples Address of Array of 32bit DAC samples
- * @param[in] nsamples number of 32bit values to write
+ * @param[in] nsamples `[0, 512]` number of 32bit values to write
  * @return OK of successful, otherwise ERROR.
  */
 int32_t
@@ -1000,7 +1009,16 @@ vldLoadPulse32(int32_t id, uint32_t *dac_samples, uint32_t nsamples)
   uint32_t isample = 0, wval = 0;
   CHECKID(id);
 
+  if(nsamples > 512)
+    {
+      printf("%s(%d): ERROR: Invalid nsamples (%d)\n",
+	     __func__, id, nsamples);
+      return ERROR;
+    }
+
   VLOCK;
+  vmeWrite32(&VLDp[id]->reset, VLD_RESET_PULSESHAPE_ADDR);
+
   /* loop through and write 4 byte values out of the 1 byte samples */
   while(isample < nsamples)
     {
@@ -1079,8 +1097,8 @@ vldLoadExamplePulse(int32_t id)
  * @brief Load an square pulse into specified VLD
  * @details Load an square pulse into specified VLD, with specified width and dac level
  * @param[in] id Slot ID
- * @param[in] width `[0, 512]` Pulse width [2ns]
- * @param[in] dac `[0, 255]` DAC value
+ * @param[in] width `[0, 2048]` Pulse width [2ns]
+ * @param[in] dac `[0, 63]` DAC value
  * @return OK of successful, otherwise ERROR.
  */
 int32_t
@@ -1088,21 +1106,29 @@ vldLoadSquarePulse(int32_t id, uint32_t width, uint8_t dac)
 {
   int32_t rval = 0, idata;
   uint8_t *dac_samples = NULL;
+  uint32_t max_width = 4 * 512;
 
-  dac_samples = (uint8_t *)malloc((width + 4) * sizeof(uint8_t));
+  if(width > max_width)
+    {
+      printf("%s(%d): ERROR: Invalid width (%d)\n",
+	     __func__, id, width);
+      return ERROR;
+    }
 
-  dac_samples[0] = 0;
-  dac_samples[1] = 0;
+  dac_samples = (uint8_t *)malloc(max_width * sizeof(uint8_t));
 
-  for(idata = 2; idata < width+2; idata++)
+  for(idata = 0; idata < width; idata++)
     {
       dac_samples[idata] = dac;
     }
 
-  dac_samples[width+2] = 0;
-  dac_samples[width+3] = 0;
+  /* Fill the reset of the samples with 0 */
+  while(idata < max_width)
+    {
+      dac_samples[idata++] = 0;
+    }
 
-  rval = vldLoadPulse(id, dac_samples, width+4);
+  rval = vldLoadPulse(id, dac_samples, max_width);
 
   if(dac_samples)
     free(dac_samples);

@@ -137,6 +137,7 @@ typedef struct
 #define VLD_RESET_I2C                  (1<<1)
 #define VLD_RESET_JTAG                 (1<<2)
 #define VLD_RESET_SOFT                 (1<<4)
+#define VLD_RESET_PULSESHAPE_ADDR      (1<<5)
 #define VLD_RESET_CLK                  (1<<8)
 #define VLD_RESET_MGT                  (1<<10)
 #define VLD_RESET_HARD_CLK             (1<<21)
