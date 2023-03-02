@@ -1097,7 +1097,7 @@ vldLoadExamplePulse(int32_t id)
  * @brief Load an square pulse into specified VLD
  * @details Load an square pulse into specified VLD, with specified width and dac level
  * @param[in] id Slot ID
- * @param[in] width `[0, 2048]` Pulse width [2ns]
+ * @param[in] width `[0, 2044]` Pulse width [2ns]
  * @param[in] dac `[0, 63]` DAC value
  * @return OK of successful, otherwise ERROR.
  */
@@ -1108,7 +1108,7 @@ vldLoadSquarePulse(int32_t id, uint32_t width, uint8_t dac)
   uint8_t *dac_samples = NULL;
   uint32_t max_width = 4 * 512;
 
-  if(width > max_width)
+  if(width > (max_width - 4))
     {
       printf("%s(%d): ERROR: Invalid width (%d)\n",
 	     __func__, id, width);
@@ -1117,7 +1117,12 @@ vldLoadSquarePulse(int32_t id, uint32_t width, uint8_t dac)
 
   dac_samples = (uint8_t *)malloc(max_width * sizeof(uint8_t));
 
-  for(idata = 0; idata < width; idata++)
+  dac_samples[0] = 0;
+  dac_samples[1] = 0;
+  dac_samples[2] = 0;
+  dac_samples[3] = 0;
+
+  for(idata = 4; idata < width+4; idata++)
     {
       dac_samples[idata] = dac;
     }
