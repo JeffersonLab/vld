@@ -4,3 +4,4 @@
 -- V2.5, Dec. 14, 2022: Use Reg 0x78, 0x7C to readout the Bleach Timer, non-valid address: 0xBadAdd25
 -- V3.1, Feb. 14, 2023: Added the periodic trigger (0x8C) logic.  (Copied from TIpcieUS design). 0xBadAdd31
 -- V3.2, Feb. 15, 2023: Use VmeReset(5) to reset the Pulse_shape loading Address (to 0), also a timeout of 1/4 second.
+-- V3.3, Feb. 28, 2023: Add the VmeReset(4) to reset the settings to default, so no accidental calibration pulse, etc.
