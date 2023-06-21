@@ -54,4 +54,72 @@ make install
     ./vldFirmwareUpdate <slotnumber> <firmware svf file>
   #+end_src
 
+** Shared Memory and Readout Data
+- a shared memory file is created at
+  #+begin_example
+/dev/shm/vld
+  #+end_example
+- The channel enable mask it is written to shared memory with any successful call to
+  #+begin_src C
+int32_t  vldSetChannelMask(int32_t id, uint32_t connector, uint32_t lochanEnableMask, uint32_t hichanEnableMask);
+  #+end_src
+- This data is shared memory mutex protected and is obtained using the call
+  #+begin_src C
+int32_t vldShmReadBlock(volatile uint32_t *data, uint32_t nwords);
+  #+end_src
+
+*** ~vldShmReadBlock~ Data Format
+**** Block Header
+- Type: 0x0
+- Size: 1 word
+- Description: Indicates the beginning of a block of VLD data.
+  
+[[file:pics/vld_blockheader.png]]
+
+***** ~NUM_VLD~:
+- Number of VLD that are readout in this block
+***** ~READ_COUNT~:
+- Number of times data has been read from VLD shared memory
+***** ~WRITE_COUNT~:
+- Number of times data has been written to VLD shared memory
+
+**** Block Trailer
+- Type: 0x1
+- Size: 1 word
+- Description: Indicates the end of a block of VLD data. The data words in a block are bracketed by the block header and trailer
+  
+[[file:pics/vld_blocktrailer.png]]
+
+***** ~NUM_WORDS~:
+- Total number of words in block
+
+**** Slot Header
+- Type: 0x2
+- Size: 1 word
+- Description: Indicates the start of a VLD slot data. ~NUM_CONNECTOR_WORDS~ provides the number of words to follow (e.g. 8 connector words for 4 connectors)
+  
+[[file:pics/vld_slotheader.png]]
+
+***** ~SLOT_ID~:
+- Slot ID (set by VME64x backplane)
+
+***** ~NUM_CONNECTOR_WORDS~:
+- Number of connector data words to follow (4 x 2 = current)
+
+**** Connector Data
+- Type: 0x2 continuation
+- Size: 8 words (2 words per connector)
+- Description: Shows the state of the VLD channel enable mask for indicated ~CONNECTOR_ID~, with ~LO_HI~ channel mask flag
+
+[[file:pics/vld_connectordata.png]]
+
+***** ~CONNECTOR_ID~:
+- ID of VLD connector ~[0, 3]~
+
+***** ~LO_HI~:
+- The Low (0) or High (1) 18 channels of the connector
+
+***** ~CHANNEL_MASK~:
+- Mask of channels with VLD pulse enabled
+
 
