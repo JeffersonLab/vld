@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include "jvme.h"
 #include "vldLib.h"
+#include "vldShm.h"
 
 /* Mutex to guard register read/writes */
 pthread_mutex_t vldMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -303,6 +304,8 @@ vldInit(uint32_t addr, uint32_t addr_inc, uint32_t nfind, uint32_t iFlag)
 	     __func__);
       return ERROR;
     }
+
+  vldShmCreateLockShm();
 
   return OK;
 
@@ -906,6 +909,9 @@ vldSetChannelMask(int32_t id,
 	     (lochanEnableMask << 1));
 
   VUNLOCK;
+
+  vldShmSetChannelMask(id, connector, lochanEnableMask, hichanEnableMask);
+
   return OK;
 
 }
@@ -1104,8 +1110,8 @@ vldLoadExamplePulse(int32_t id)
 int32_t
 vldLoadSquarePulse(int32_t id, uint32_t width, uint8_t dac)
 {
-  int32_t rval = 0, idata;
-  uint8_t *dac_samples = NULL;
+  int32_t rval = 0, isample = 0;
+  uint8_t idata = 0, max_dac_background = 0xf, *dac_samples = NULL;
   uint32_t max_width = 4 * 512;
 
   if(width > (max_width - 4))

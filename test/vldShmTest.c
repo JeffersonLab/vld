@@ -1,9 +1,9 @@
 /*
  * File:
- *    vldStatus
+ *    vldShmTest
  *
  * Description:
- *    show status of VME LED Driver module and library
+ *    Test VLD shared memory routines
  *
  *
  */
@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include "jvme.h"
 #include "vldLib.h"
+#include "vldShm.h"
 
 int32_t
 main(int32_t argc, char *argv[])
@@ -42,6 +43,21 @@ main(int32_t argc, char *argv[])
   vldInit(address<<19, 0, 1, 0);
   vldGStatus(1);
 
+  vldSetChannelMask(8, 0, 0xff00, 0x00ff);
+  vldSetChannelMask(8, 2, 0x2200, 0x0022);
+  vldSetChannelMask(8, 3, 0x30000, 0x00003);
+
+  uint32_t data[256], retWords = 0;
+
+  retWords = vldShmReadBlock(data, 256);
+
+  int32_t idata = 0;
+  for(idata = 0; idata < retWords; idata++)
+    {
+      printf("%4d: 0x%08x\n", idata, data[idata]);
+    }
+
+
  CLOSE:
 
   vmeBusUnlock();
@@ -60,6 +76,6 @@ main(int32_t argc, char *argv[])
 
 /*
   Local Variables:
-  compile-command: "make -k vldStatus"
+  compile-command: "make -k vldShmTest"
   End:
  */

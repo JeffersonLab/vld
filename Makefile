@@ -76,7 +76,7 @@ CFLAGS			+= -Wall -Wno-unused -g
 else
 CFLAGS			+= -O2
 endif
-SRC			= ${BASENAME}Lib.c
+SRC			= ${BASENAME}Lib.c ${BASENAME}Shm.c
 HDRS			= $(SRC:.c=.h)
 OBJ			= $(SRC:.c=.o)
 DEPS			= $(SRC:.c=.d)
@@ -93,11 +93,11 @@ endif
 
 %.so: $(SRC)
 	@echo " CC     $@"
-	${Q}$(CC) -fpic -shared $(CFLAGS) $(INCS) -o $(@:%.a=%.so) $<
+	${Q}$(CC) -fpic -shared $(CFLAGS) $(INCS) -o $(@:%.a=%.so) $(SRC)
 
 %.a: $(OBJ)
 	@echo " AR     $@"
-	${Q}$(AR) ru $@ $<
+	${Q}$(AR) ru $@ $(OBJ)
 	@echo " RANLIB $@"
 	${Q}$(RANLIB) $@
 
