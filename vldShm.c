@@ -22,6 +22,7 @@
 #include <sys/stat.h>        /* For mode constants */
 #include <fcntl.h>           /* For O_* constants */
 #include <errno.h>
+#include <byteswap.h>
 #include "jvme.h"
 #include "vldShm.h"
 
@@ -623,7 +624,7 @@ vldShmReadBlock(volatile uint32_t *data, uint32_t nwords)
   block_header = (1 << 31) | (0 << 27) | (nVLD << 16) |
     ((p_sync->write_count & 0xFF) << 8) | (++p_sync->read_count & 0xFF);
 
-  data[rval++] = block_header;
+  data[rval++] = bswap_32(block_header);
 
 
   for(ivld = 0; ivld < nVLD; ivld++)
@@ -633,25 +634,25 @@ vldShmReadBlock(volatile uint32_t *data, uint32_t nwords)
       /* Slot Header */
       slot_header = (1 << 31) | (2 << 27) | (id << 16) | 2 * 4;
 
-      data[rval++] = slot_header;
+      data[rval++] = bswap_32(slot_header);
 
       for(iconn = 0; iconn < 4; iconn++)
 	{
 	  /* Connector data: lo */
 	  connector_data = (iconn << 28) | (0 << 24) |
 	    p_sync->slot_data[id].connector[iconn].lo_channel_mask;
-	  data[rval++] = connector_data;
+	  data[rval++] = bswap_32(connector_data);
 
 	  /* Connector data: hi */
 	  connector_data = (iconn << 28) | (1 << 24) |
 	    p_sync->slot_data[id].connector[iconn].hi_channel_mask;
-	  data[rval++] = connector_data;
+	  data[rval++] = bswap_32(connector_data);
 	}
     }
 
   /* Block Trailer */
   block_trailer = (1 << 31) | (1 << 27) | (rval + 1);
-  data[rval++] = block_trailer;
+  data[rval++] = bswap_32(block_trailer);
 
   vldShmUnlock();
 

@@ -52,3 +52,4 @@ int32_t vldShmUnlock();
 int32_t vldShmCheckMutexHealth(int32_t time_seconds);
 int32_t vldShmSetChannelMask(int32_t id, uint32_t connector, uint32_t lochanEnableMask, uint32_t hichanEnableMask);
 int32_t vldShmReadBlock(volatile uint32_t *data, uint32_t nwords);
+int32_t vldShmResetCounts(int32_t reset_read_count, int32_t reset_write_count);
