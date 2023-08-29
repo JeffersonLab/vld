@@ -1110,8 +1110,8 @@ vldLoadExamplePulse(int32_t id)
 int32_t
 vldLoadSquarePulse(int32_t id, uint32_t width, uint8_t dac)
 {
-  int32_t rval = 0, isample = 0;
-  uint8_t idata = 0, max_dac_background = 0xf, *dac_samples = NULL;
+  int32_t rval = 0, isample = 0, idata = 0;
+  uint8_t max_dac_background = 0xf, *dac_samples = NULL;
   uint32_t max_width = 4 * 512;
 
   if(width > (max_width - 4))
